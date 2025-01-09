@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from PIL import Image
 from tela_cadastro import abrir_tela_cadastro
+from db import criar_conexao, criar_cursor
 
 # Criar janela principal
 ctk.set_appearance_mode("system")
@@ -42,13 +43,58 @@ label_senha.place(x=25, y=205)
 checkbox = ctk.CTkCheckBox(master=login_frame, text="Lembrar de mim")
 checkbox.place(x=25, y=235)
 
-login_button = ctk.CTkButton(master=login_frame, text="Login", width=300)
+def realizar_login():
+    nome = nome_inserir.get()
+    senha = senha_inserir.get()
+    
+    if nome and senha:
+        if ler_banco(nome, senha):  # Chame a função que verifica o login
+            print("Login realizado com sucesso!")
+        else:
+            print("Nome de usuário ou senha incorretos.")
+    else:
+        print("Por favor, preencha todos os campos.")
+
+login_button = ctk.CTkButton(master=login_frame, text="Login", width=300, command=realizar_login)
 login_button.place(x=25, y=285)
 
 label_cadastro = ctk.CTkLabel(master=login_frame, text="Não possui uma conta?")
 label_cadastro.place(x=25, y=325)
 cadastrar_btn = ctk.CTkButton(master=login_frame, text="Cadastre-se", width=150, command=lambda: abrir_tela_cadastro(janela))
 cadastrar_btn.place(x=175, y=325)
+
+def login (nome_inserir, senha_inserir):
+    nome = nome_inserir.get()
+    senha = senha_inserir.get()
+
+def ler_banco(nome, senha):
+    try:
+        conexao = criar_conexao()  # Cria a conexão
+        cursor = criar_cursor(conexao)  # Cria o cursor
+
+        # Query com placeholders para evitar injeção de SQL
+        query = "SELECT * FROM usuarios WHERE nome_usuario = %s AND senha = %s"
+        cursor.execute(query, (nome, senha))
+        
+        # Busca o resultado
+        resultado = cursor.fetchone()
+
+        if resultado:
+            print("Usuário encontrado:", resultado)
+            return True
+        else:
+            print("Nome de usuário ou senha incorretos.")
+            return False
+    except Exception as e:
+        print("Erro ao verificar usuário:", e)
+        return False
+    finally:
+        if cursor:
+            cursor.close()  # Fecha o cursor
+        if conexao:
+            conexao.close()  # Fecha a conexão
+
+
 
 # Rodar janela
 janela.mainloop()
